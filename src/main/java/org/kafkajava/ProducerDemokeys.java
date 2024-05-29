@@ -19,60 +19,45 @@ public class ProducerDemokeys {
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
+        properties.setProperty(ProducerConfig.PARTITIONER_CLASS_CONFIG, CustomPartitioner.class.getName());
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
-        for (int i=0; i<10; i++ ) {
 
-            // create a producer record
 
-            String topic = "demo_java";
-            String value = "hello world " + Integer.toString(i);
-            String key = "id_" + Integer.toString(i);
 
-            ProducerRecord<String, String> producerRecord =
-                    new ProducerRecord<>(topic, key, value);
+        for (int j = 0; j < 2; j++) {
+            for (int i = 0; i < 10; i++) {
 
-            // send data - asynchronous
-            producer.send(producerRecord, new Callback() {
-                public void onCompletion(RecordMetadata recordMetadata, Exception e) {
-                    // executes every time a record is successfully sent or an exception is thrown
-                    if (e == null) {
-                        // the record was successfully sent
-                        log.info("Received new metadata. \n" +
-                                "Topic:" + recordMetadata.topic() + "\n" +
-                                "Key:" + producerRecord.key() + "\n" +
-                                "Partition: " + recordMetadata.partition() + "\n" +
-                                "Offset: " + recordMetadata.offset() + "\n" +
-                                "Timestamp: " + recordMetadata.timestamp());
-                    } else {
-                        log.error("Error while producing", e);
+                // create a producer record
+
+                String topic = "demo-java-key-1";
+                String value = "hello world " + Integer.toString(i);
+                String key = "id_" + Integer.toString(i);
+
+
+                ProducerRecord<String, String> producerRecordwithkeys =
+                        new ProducerRecord<>(topic, key, value);
+                // send data - asynchronous
+                producer.send(producerRecordwithkeys, new Callback() {
+                    public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+                        // executes every time a record is successfully sent or an exception is thrown
+                        if (e == null) {
+                            // the record was successfully sent
+                            log.info("Key:" + key + "|"
+                                    + "Partition: " + recordMetadata.partition() + "|"+ value +"\n");
+                        } else {
+                            log.error("Error while producing", e);
+                        }
                     }
-                }
-            });
-        }
+                });
 
-        // create a producer record
-        ProducerRecord<String, String> producerRecord =
-                new ProducerRecord<>("demo_java", "hello world");
 
-        // send data - asynchronous
-        // send data - asynchronous
-        producer.send(producerRecord, new Callback() {
-            public void onCompletion(RecordMetadata recordMetadata, Exception e) {
-                // executes every time a record is successfully sent or an exception is thrown
-                if (e == null) {
-                    // the record was successfully sent
-                    log.info("Received new metadata. \n" +
-                            "Topic:" + recordMetadata.topic() + "\n" +
-                            "Partition: " + recordMetadata.partition() + "\n" +
-                            "Offset: " + recordMetadata.offset() + "\n" +
-                            "Timestamp: " + recordMetadata.timestamp());
-                } else {
-                    log.error("Error while producing", e);
-                }
             }
-        });
-
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
         // flush data - synchronous
         producer.flush();
         // flush and close producer
